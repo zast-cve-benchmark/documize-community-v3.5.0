@@ -1,0 +1,128 @@
+<div class="view-space">
+
+	<div class="text-right">
+		{{#ui/ui-toolbar dark=false light=false raised=false large=false bordered=false}}
+			{{ui/ui-toolbar-icon icon=constants.Icon.Blocks color=constants.Color.Gray tooltip="Complete"
+				selected=(eq viewDensity "1") onClick=(action "onSwitchView" "1")}}
+
+			{{ui/ui-toolbar-icon icon=constants.Icon.All color=constants.Color.Gray tooltip="Comfort"
+				selected=(eq viewDensity "2") onClick=(action "onSwitchView" "2")}}
+
+			{{ui/ui-toolbar-label label="—"  color=constants.Color.Gray tooltip="Compact"
+				selected=(eq viewDensity "3") onClick=(action "onSwitchView" "3")}}
+
+			{{#ui/ui-toolbar-icon icon=constants.Icon.Sort color=constants.Color.Gray tooltip="Sort"}}
+				{{#attach-popover class="ember-attacher-popper" hideOn="click" showOn="click" isShown=false placement="bottom-end" as |attacher|}}
+					<i class="dicon {{constants.Icon.Cross}} closer" {{action attacher.hide}}/>
+					<div class="container">
+						<Ui::UiSpacer @size="100" />
+
+						<div class="text-center">
+							<ul class="ui-option-picker ui-option-picker-horiz">
+								<li class="option {{if sortBy.name "selected"}}" {{action "onSetSort" "name"}}>
+									<div class="text">Name</div>
+								</li>
+								<li class="option {{if sortBy.created "selected"}}" {{action "onSetSort" "created"}}>
+									<div class="text">Created date</div>
+								</li>
+								<li class="option {{if sortBy.updated "selected"}}" {{action "onSetSort" "updated"}}>
+									<div class="text">Last updated</div>
+								</li>
+							</ul>
+						</div>
+
+						<Ui::UiSpacer @size="100" />
+
+						<div class="text-center">
+							<ul class="ui-option-picker ui-option-picker-horiz">
+								<li class="option {{if sortBy.asc "selected"}}" {{action "onSetSort" "asc"}}>
+									<div class="text">Ascending</div>
+								</li>
+								<li class="option {{if sortBy.desc "selected"}}" {{action "onSetSort" "desc"}}>
+									<div class="text">Descending</div>
+								</li>
+							</ul>
+						</div>
+
+						<Ui::UiSpacer @size="300" />
+
+						{{ui/ui-button
+							light=true
+							color=constants.Color.Yellow
+							label=constants.Label.Sort
+							onClick=(action "onSortBy" attacher)}}
+					</div>
+				{{/attach-popover}}
+			{{/ui/ui-toolbar-icon}}
+		{{/ui/ui-toolbar}}
+	</div>
+
+	<Ui::UiSpacer @size="200" />
+
+	<ul class="documents">
+		{{#each documents key="id" as |document|}}
+			<li class="document {{if document.selected "selected"}}" id="document-{{document.id}}">
+				{{#link-to "document.index" space.id space.slug document.id document.slug class="info"}}
+					<div class="name">{{ document.name }}</div>
+					{{#if (not-eq viewDensity "3")}}
+						<div class="desc">{{ document.excerpt }}</div>
+					{{/if}}
+					{{#if (eq viewDensity "1")}}
+						<div class="meta">
+							<div class="lifecycle">
+								<div class="{{if (eq document.lifecycle constants.Lifecycle.Draft) "draft"}}
+								{{if (eq document.lifecycle constants.Lifecycle.Live) "live"}}
+								{{if (eq document.lifecycle constants.Lifecycle.Archived) "archived"}}">
+									{{document.lifecycleLabel}}
+								</div>
+							</div>
+							{{folder/document-categories categories=document.category}}
+							{{folder/document-tags documentTags=document.tags}}
+						</div>
+					{{/if}}
+				{{/link-to}}
+
+				{{#if hasDocumentActions}}
+					<div class="checkbox" {{action "selectDocument" document.id}}>
+						{{#if document.selected}}
+							<i class="dicon {{constants.Icon.CheckboxChecked}}"/>
+						{{else}}
+							<i class="dicon {{constants.Icon.Checkbox}}"/>
+						{{/if}}
+					</div>
+					{{#if document.selected}}
+						<div class="actions">
+							{{#ui/ui-toolbar dark=false light=true raised=true large=false bordered=true}}
+								{{ui/ui-toolbar-icon icon=constants.Icon.Export color=constants.Color.Gray tooltip="Export content" onClick=(action "onExport")}}
+								{{#if permissions.documentMove}}
+									{{ui/ui-toolbar-icon icon=constants.Icon.Export2 color=constants.Color.Gray tooltip="Move to another space" onClick=(action "onShowMoveDocuments")}}
+								{{/if}}
+								{{#if permissions.documentDelete}}
+									{{ui/ui-toolbar-icon icon=constants.Icon.Delete color=constants.Color.Red tooltip="Delete" onClick=(action "onShowDeleteDocuments")}}
+								{{/if}}
+							{{/ui/ui-toolbar}}
+						</div>
+					{{/if}}
+				{{/if}}
+
+			</li>
+		{{/each}}
+	</ul>
+</div>
+
+{{#ui/ui-dialog title="Delete Documents" confirmCaption="Delete" buttonColor=constants.Color.Red show=showDeleteDialog onAction=(action "onDeleteDocuments")}}
+	<p>Are you sure you want to delete {{selectedDocuments.length}} {{selectedCaption}}?</p>
+{{/ui/ui-dialog}}
+
+{{#ui/ui-dialog title="Move Documents" confirmCaption="Move" buttonColor=constants.Color.Green show=showMoveDialog onAction=(action "onMoveDocuments")}}
+	<p>Select space for {{selectedDocuments.length}} {{selectedCaption}}</p>
+	{{ui/ui-list-picker items=moveOptions nameField="name" singleSelect=true}}
+{{/ui/ui-dialog}}
+
+{{#if showAdd}}
+	{{ui/empty-state icon=constants.Icon.ArrowUp message="Add documents via + CONTENT"}}
+{{/if}}
+
+{{#if showLockout}}
+	{{ui/empty-state icon=constants.Icon.Preview message="Space permissions are preventing you from viewing and creating documents"}}
+{{/if}}

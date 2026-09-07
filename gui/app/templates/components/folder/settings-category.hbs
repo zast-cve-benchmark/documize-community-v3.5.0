@@ -1,0 +1,109 @@
+{{layout/logo-heading
+	title="Categories"
+	desc="Assign categories to documents and decide who can view them"
+	icon=constants.Icon.Category}}
+
+<div class="space-admin">
+	<div class="categories">
+		<form class="form" onsubmit={{action "onAdd"}}>
+			<div class="form-group">
+				{{focus-input id="new-category-name" type="text" class="form-control mousetrap" placeholder="Category name" value=newCategory}}
+			</div>
+			{{ui/ui-button color=constants.Color.Green light=true
+				label=constants.Label.Add icon=constants.Icon.Category
+				onClick=(action "onAdd")}}
+		</form>
+	</div>
+</div>
+
+<Ui::UiSpacer @size="400" />
+
+<div class="space-admin">
+	<div class="categories">
+		{{#each category as |cat|}}
+			<div class="category">
+				<div class="info">
+					<div class="name">{{cat.category}}</div>
+					<div class="desc">
+						Assigned to {{cat.documents}} {{if (eq cat.documents 1) "document" "documents" }}
+						and viewable by {{cat.users}} users/groups
+					</div>
+					{{#unless cat.access}}
+						<p class="color-red-600 bold-500">You have no view permission for this category</p>
+					{{/unless}}
+					{{#if cat.isDefault}}
+						<p class="color-yellow-600 bold-500">Default category for new content</p>
+					{{/if}}
+				</div>
+				<div class="actions">
+					{{#ui/ui-toolbar dark=false light=true raised=true large=false bordered=true}}
+						{{ui/ui-toolbar-icon icon=constants.Icon.Locked color=constants.Color.Gray
+							tooltip="Set view permissions" onClick=(action "onShowAccessPicker" cat.id)}}
+						{{ui/ui-toolbar-icon icon=constants.Icon.Edit color=constants.Color.Gray
+							tooltip="Edit category" onClick=(action "onShowEdit" cat.id)}}
+						{{ui/ui-toolbar-icon icon=constants.Icon.Delete color=constants.Color.Red
+							tooltip="Delete category" onClick=(action "onShowDelete" cat.id)}}
+					{{/ui/ui-toolbar}}
+				</div>
+			</div>
+		{{/each}}
+	</div>
+</div>
+
+<div id="category-edit-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">Edit Category</div>
+			<div class="modal-body">
+				<div class="form-group">
+					{{focus-input id="edit-category-name" type="text" class="form-control mousetrap" placeholder="Category name" value=editName}}
+				</div>
+				<div class="form-group">
+					<label>Default</label>
+					{{x-toggle value=editDefault size="medium" theme="light" onToggle=(action (mut editDefault))}}
+					<small class="form-text text-muted">Automatically applies to newly created documents</small>
+				</div>
+			</div>
+			<div class="modal-footer">
+				{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+				{{ui/ui-button-gap}}
+				{{ui/ui-button color=constants.Color.Green light=true label=constants.Label.Save onClick=(action "onSave")}}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="category-delete-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">Delete Category</div>
+			<div class="modal-body">
+				<p>Are you sure you want to delete this category?</p>
+			</div>
+			<div class="modal-footer">
+				{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+				{{ui/ui-button-gap}}
+				{{ui/ui-button color=constants.Color.Red light=true label=constants.Label.Delete onClick=(action "onDelete")}}
+			</div>
+		</div>
+	</div>
+</div>
+
+{{#ui/ui-dialog title="Set Category Access" confirmCaption="Save" buttonColor=constants.Color.Green show=showCategoryAccess onAction=(action "onGrantAccess")}}
+	<p>Select who can view documents within category</p>
+	<div class="widget-list-picker">
+		<ul class="options">
+			{{#each categoryPermissions as |permission|}}
+				<li class="option {{if permission.selected "selected"}}" {{action "onToggle" permission}}>
+					{{permission.name}}
+					{{#if (eq permission.whoId session.user.id)}}
+						<small class="form-text text-muted d-inline-block">(you)</small>
+					{{/if}}
+					{{#if permission.selected}}
+						<i class="dicon {{constants.Icon.Tick}}"/>
+					{{/if}}
+				</li>
+			{{/each}}
+		</ul>
+	</div>
+{{/ui/ui-dialog}}

@@ -1,0 +1,208 @@
+{{layout/logo-heading
+	title="Space Permissions"
+	desc="Assign permissions to users or groups and invite new users to this space"
+	icon=constants.Icon.Locked}}
+
+<div class="view-customize">
+	<div class="explain-user-perms">
+		<div class="title" {{action "toggleSpacePerms"}}>
+			Space Permissions Explained
+			{{#if showSpacePermExplain}}
+                <i class="dicon {{constants.Icon.ArrowSmallUp}}"></i>
+			{{else}}
+				<i class="dicon {{constants.Icon.ArrowSmallDown}}"></i>
+			{{/if}}
+		</div>
+		<div class="perms space-perms">
+			<div class="perm-name">View</div>
+			<div class="perm-desc">See content within this space</div>
+			<div class="perm-name">Manage</div>
+			<div class="perm-desc">Manage all aspects of space except deletion</div>
+			<div class="perm-name">Owner</div>
+			<div class="perm-desc">Manage and delete space</div>
+		</div>
+
+		<Ui::UiSpacer @size="200" />
+
+		<div class="title" {{action "toggleDocumentPerms"}}>
+			Document Permissions Explained
+			{{#if showDocumentPermExplain}}
+				<i class="dicon {{constants.Icon.ArrowSmallUp}}"></i>
+			{{else}}
+				<i class="dicon {{constants.Icon.ArrowSmallDown}}"></i>
+			{{/if}}
+		</div>
+		<div class="perms document-perms">
+			<div class="perm-name">Create</div>
+			<div class="perm-desc">Can create new documents in space</div>
+			<div class="perm-name">Edit</div>
+			<div class="perm-desc">Can change document contents</div>
+			<div class="perm-name">Delete</div>
+			<div class="perm-desc">Can remove documents from space</div>
+			<div class="perm-name">Move</div>
+			<div class="perm-desc">Can move documents from this space to another space</div>
+			<div class="perm-name">Copy</div>
+			<div class="perm-desc">Can duplicate documents</div>
+			<div class="perm-name">Templates</div>
+			<div class="perm-desc">Can create and publish document templates</div>
+			<div class="perm-name">Approval</div>
+			<div class="perm-desc">Can (1) approve or reject document changes; (2) move documents from draft to live</div>
+			<div class="perm-name">Drafts</div>
+			<div class="perm-desc">Can view and work on documents marked as draft</div>
+			<div class="perm-name">Versions</div>
+			<div class="perm-desc">Can create document version and link them together</div>
+		</div>
+	</div>
+</div>
+
+<Ui::UiSpacer @size="300" />
+
+<div class="text-center">
+	{{ui/ui-button color=constants.Color.Gray light=true icon=constants.Icon.Person
+		label="Add Existing User"
+		onClick=(action "onShowAddModal")}}
+    {{#if isAuthProviderDocumize}}
+        {{ui/ui-button-gap}}
+        {{ui/ui-button color=constants.Color.Gray light=true icon=constants.Icon.Plus
+            label="Invite New User"
+            onClick=(action "onShowInviteModal")}}
+    {{/if}}
+</div>
+
+<Ui::UiSpacer @size="300" />
+
+<div class="space-admin table-responsive">
+	<table class="table table-hover permission-table">
+		<thead>
+			<tr>
+				<th></th>
+				<th colspan="3" class="text-warning">Spaces</th>
+				<th colspan="9" class="text-info">Documents</th>
+			</tr>
+			<tr>
+				<th></th>
+				<th class="text-warning">View</th>
+				<th class="text-warning">Manage</th>
+				<th class="text-warning">Owner</th>
+				<th class="text-info">Create</th>
+				<th class="text-info">Edit</th>
+				<th class="text-info">Delete</th>
+				<th class="text-info">Move</th>
+				<th class="text-info">Copy</th>
+				<th class="text-info">Templates</th>
+				<th class="text-info">Approval</th>
+				<th class="text-info">Drafts</th>
+				<th class="text-info">Versions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each spacePermissions as |permission|}}
+				<tr>
+					<td class="no-wrap no-width">
+						<i class="dicon {{constants.Icon.TriangleSmallDown}} cursor-pointer"/>
+						{{#attach-popover class="ember-attacher-popper" hideOn="click clickout" showOn="click" isShown=false}}
+							<div class="menu">
+								<a class="item" href="#" {{action "onBulkPermission" permission true}}>Grant all</a>
+								<a class="item" href="#" {{action "onBulkPermission" permission false}}>Revoke all</a>
+							</div>
+						{{/attach-popover}}
+						{{#if (eq permission.who "role")}}
+							<i class="dicon {{constants.Icon.People}}"/>
+							<span class="color-gray-700">&nbsp;{{permission.name}} ({{permission.members}})</span>
+						{{else}}
+							{{#if (eq permission.whoId constants.EveryoneUserId)}}
+								<i class="dicon {{constants.Icon.World}}"/>
+								<span class="color-green-700">&nbsp;{{permission.name}}</span>
+							{{else}}
+								<i class="dicon {{constants.Icon.Person}}"/>
+								<span>&nbsp;{{permission.name}}
+									{{#if (eq permission.whoId session.user.id)}}
+										&nbsp;(you)
+									{{/if}}
+								</span>
+							{{/if}}
+						{{/if}}
+					</td>
+					<td>{{x-toggle value=permission.spaceView onToggle=(action (mut permission.spaceView))}}</td>
+					<td>{{x-toggle value=permission.spaceManage onToggle=(action (mut permission.spaceManage))}}</td>
+					<td>{{x-toggle value=permission.spaceOwner onToggle=(action (mut permission.spaceOwner)) disabled=isNotSpaceOwner}}</td>
+					<td>{{x-toggle value=permission.documentAdd onToggle=(action (mut permission.documentAdd))}}</td>
+					<td>{{x-toggle value=permission.documentEdit onToggle=(action (mut permission.documentEdit))}}</td>
+					<td>{{x-toggle value=permission.documentDelete onToggle=(action (mut permission.documentDelete))}}</td>
+					<td>{{x-toggle value=permission.documentMove onToggle=(action (mut permission.documentMove))}}</td>
+					<td>{{x-toggle value=permission.documentCopy onToggle=(action (mut permission.documentCopy))}}</td>
+					<td>{{x-toggle value=permission.documentTemplate onToggle=(action (mut permission.documentTemplate))}}</td>
+					<td>{{x-toggle value=permission.documentApprove onToggle=(action (mut permission.documentApprove))}}</td>
+					<td>{{x-toggle value=permission.documentLifecycle onToggle=(action (mut permission.documentLifecycle))}}</td>
+					<td>{{x-toggle value=permission.documentVersion onToggle=(action (mut permission.documentVersion))}}</td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</div>
+
+<Ui::UiSpacer @size="200" />
+
+{{ui/ui-button color=constants.Color.Green light=true icon=constants.Icon.Locked
+	label=constants.Label.Save onClick=(action "onSave")}}
+
+<div id="space-add-user-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">Add users to this space</div>
+			<div class="modal-body">
+				{{input id="user-search" type="text" class="form-control mousetrap" placeholder="Search for users by firstname, lastname, email" value=searchText key-up=(action "onSearch")}}
+				<Ui::UiSpacer @size="200" />
+				<div class="space-admin">
+					<div class="add-users">
+						{{#each filteredUsers as |user|}}
+							<div class="item">
+								{{#ui/ui-toolbar dark=false light=true raised=true large=false bordered=true}}
+									{{ui/ui-toolbar-icon
+										icon=constants.Icon.AddUser
+										color=constants.Color.Green
+										tooltip="Remove member"
+										onClick=(action "onAdd" user)}}
+									{{ui/ui-toolbar-label
+										color=constants.Color.Gray
+										label=user.fullname
+										onClick=(action "onAdd" user)}}
+								{{/ui/ui-toolbar}}
+							</div>
+						{{/each}}
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+	 			{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="space-invite-user-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">Invite users to this space</div>
+			<div class="modal-body">
+				<p>Email invite leads to a smooth onboarding process</p>
+				<form onsubmit={{action "onSpaceInvite"}}>
+					<div class="form-group">
+						<label for="space-invite-email">Email</label>
+						{{input id="space-invite-email" type="email" class="form-control mousetrap" placeholder="Enter email" value=inviteEmail}}
+						<small class="form-text text-muted">Comma separate multiple email addresses</small>
+					</div>
+					<div class="form-group">
+						<label for="space-invite-msg">Message</label>
+						{{textarea id="space-invite-msg" value=inviteMessage class="form-control" rows="5"}}
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+				{{ui/ui-button-gap}}
+				{{ui/ui-button color=constants.Color.Green light=true label=constants.Label.Invite onClick=(action "onSpaceInvite")}}
+			</div>
+		</div>
+	</div>
+</div>

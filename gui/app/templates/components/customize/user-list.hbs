@@ -1,0 +1,270 @@
+<div class="view-customize">
+	{{#if isAuthProviderKeycloak}}
+		<Ui::UiSpacer @size="300" />
+		{{#if syncInProgress}}
+			{{ui/ui-button color=constants.Color.Gray light=true icon=constants.Icon.Locked label="Keycloak user sync running..."}}
+		{{else}}
+			{{ui/ui-button color=constants.Color.Yellow light=true icon=constants.Icon.Locked label="Sync with Keycloak" onClick=(action "onSyncKeycloak")}}
+		{{/if}}
+	{{/if}}
+
+	{{#if (or isAuthProviderLDAP isDualAuth)}}
+		<Ui::UiSpacer @size="300" />
+		{{#if syncInProgress}}
+			{{ui/ui-button color=constants.Color.Gray light=true icon=constants.Icon.Locked label="LDAP user sync running..."}}
+		{{else}}
+			{{ui/ui-button color=constants.Color.Yellow light=true icon=constants.Icon.Locked label="Sync with LDAP" onClick=(action "onSyncLDAP")}}
+		{{/if}}
+	{{/if}}
+
+	<Ui::UiSpacer @size="300" />
+	<div class="explain-user-perms">
+		<div class="title" {{action "togglePerms"}}>
+			Permissions Explained
+			{{#if showPermExplain}}
+				<i class="dicon {{constants.Icon.ArrowSmallUp}}" />
+			{{else}}
+				<i class="dicon {{constants.Icon.ArrowSmallDown}}" />
+			{{/if}}
+		</div>
+		<div class="perms">
+			<div class="perm-name">Spaces</div>
+			<div class="perm-desc">Can add spaces, both personal and shared with others</div>
+			<div class="perm-name">Visible</div>
+			<div class="perm-desc">Can see names of users and groups, can disable for external users like customers/partners</div>
+			<div class="perm-name">Admin</div>
+			<div class="perm-desc">Can manage all aspects of Documize, like this screen</div>
+			<div class="perm-name">Analytics</div>
+			<div class="perm-desc">Can view analytical reports<</div>
+			<div class="perm-name">Active</div>
+			<div class="perm-desc">Can login and use Documize</div>
+		</div>
+	</div>
+	<Ui::UiSpacer @size="300" />
+
+	<div class="form-group">
+		{{focus-input type="text" class="form-control" placeholder="filter users" value=filter key-up=(action "onFilterChange")}}
+		<small class="form-text text-muted">search firstname, lastname, email</small>
+	</div>
+
+	<div class="text-center">
+		{{#ui/ui-toolbar dark=false light=false raised=false large=true bordered=false tooltip="Maximum users to display"}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="5" selected=(eq userLimit 5) onClick=(action "onLimit" 5)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="10" selected=(eq userLimit 10) onClick=(action "onLimit" 10)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="25" selected=(eq userLimit 25) onClick=(action "onLimit" 25)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="50" selected=(eq userLimit 50) onClick=(action "onLimit" 50)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="100" selected=(eq userLimit 100) onClick=(action "onLimit" 100)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="250" selected=(eq userLimit 250) onClick=(action "onLimit" 250)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="500" selected=(eq userLimit 500) onClick=(action "onLimit" 500)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="1,000" selected=(eq userLimit 1000) onClick=(action "onLimit" 1000)}}
+			{{ui/ui-toolbar-label color=constants.Color.Gray label="ALL" selected=(eq userLimit 99999) onClick=(action "onLimit" 99999)}}
+		{{/ui/ui-toolbar}}
+	</div>
+
+	<table class="table table-responsive table-borderless user-table">
+		<thead>
+			<tr>
+				<th class="no-width"></th>
+				<th>
+					{{#if hasSelectedUsers}}
+						{{ui/ui-button
+							id="bulk-delete-users"
+							color=constants.Color.Red
+							light=false
+							icon=constants.Icon.Delete
+							label="Delete selected users"
+							onClick=(action "onShowDeleteBulk")}}
+					{{/if}}
+				</th>
+				<th class="no-width">Spaces</th>
+				<th class="no-width">Visible</th>
+				<th class="no-width">Analytics</th>
+				<th class="no-width">Admin</th>
+				<th class="no-width">Active</th>
+				<th class="no-width"></th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each users key="id" as |user|}}
+				<tr>
+					<td class="no-width text-center align-middle">
+						{{#if user.me}}
+							<i class="user-checkbox dicon {{constants.Icon.NotAllowed}}" />
+						{{else if user.selected}}
+							<i class="user-checkbox dicon {{constants.Icon.CheckboxChecked}}" {{action "toggleSelect" user}} />
+						{{else}}
+							<i class="user-checkbox dicon {{constants.Icon.Checkbox}}" {{action "toggleSelect" user}} />
+						{{/if}}
+					</td>
+					<td class="{{unless user.active "inactive-user"}} {{if user.admin "admin-user"}}">
+						<div class="name" {{action "onShowEdit" user.id}}>
+							{{user.fullname}}
+							<div class="email">{{user.email}}</div>
+						</div>
+						<div class="groups" {{action "onShowGroupsModal" user.id}}>
+							{{#each user.groups as |group|}}
+								<span class="group">
+									{{group.name}}{{#if (not-eq group user.groups.lastObject)}}, {{/if}}
+								</span>
+							{{else}}
+								<span class="group">&lt;no groups&gt;</span>
+							{{/each}}
+						</div>
+					</td>
+					<td class="no-width text-center align-middle">
+						{{#if user.editor}}
+							<i class="user-checkbox dicon {{constants.Icon.CheckboxChecked}}" {{action "toggleEditor" user.id}} />
+						{{else}}
+							<i class="user-checkbox dicon {{constants.Icon.Checkbox}}" {{action "toggleEditor" user.id}} />
+						{{/if}}
+					</td>
+					<td class="no-width text-center align-middle">
+						{{#if user.viewUsers}}
+							<i class="user-checkbox dicon {{constants.Icon.CheckboxChecked}}" {{action "toggleUsers" user.id}} />
+						{{else}}
+							<i class="user-checkbox dicon {{constants.Icon.Checkbox}}" {{action "toggleUsers" user.id}} />
+						{{/if}}
+					</td>
+					<td class="no-width text-center align-middle">
+						{{#if user.analytics}}
+							<i class="user-checkbox dicon {{constants.Icon.CheckboxChecked}}" {{action "toggleAnalytics" user.id}} />
+						{{else}}
+							<i class="user-checkbox dicon {{constants.Icon.Checkbox}}" {{action "toggleAnalytics" user.id}} />
+						{{/if}}
+					</td>
+					<td class="no-width text-center align-middle">
+						{{#if user.me}}
+							<i class="user-checkbox dicon {{constants.Icon.NotAllowed}}" />
+						{{else if user.admin}}
+							<i class="user-checkbox dicon {{constants.Icon.CheckboxChecked}}" {{action "toggleAdmin" user.id}} />
+						{{else}}
+							<i class="user-checkbox dicon {{constants.Icon.Checkbox}}" {{action "toggleAdmin" user.id}} />
+						{{/if}}
+					</td>
+					<td class="no-width text-center align-middle">
+						{{#if user.me}}
+							<i class="user-checkbox dicon {{constants.Icon.NotAllowed}}" />
+						{{else if user.active}}
+							<i class="user-checkbox dicon {{constants.Icon.CheckboxChecked}}" {{action "toggleActive" user.id}} />
+						{{else}}
+							<i class="user-checkbox dicon {{constants.Icon.Checkbox}}" {{action "toggleActive" user.id}} />
+						{{/if}}
+					</td>
+					<td class="no-width text-center align-middle">
+						{{#ui/ui-toolbar dark=false light=true raised=true large=false bordered=true}}
+							{{ui/ui-toolbar-icon icon=constants.Icon.Edit color=constants.Color.Gray tooltip="Edit user" onClick=(action "onShowEdit" user.id)}}
+							{{ui/ui-toolbar-icon icon=constants.Icon.AddUser color=constants.Color.Gray tooltip="Assign user groups" onClick=(action "onShowGroupsModal" user.id)}}
+							{{#unless user.me}}
+								{{ui/ui-toolbar-icon icon=constants.Icon.Delete color=constants.Color.Red tooltip="Delete user" onClick=(action "onShowDelete" user.id)}}
+							{{/unless}}
+						{{/ui/ui-toolbar}}
+					</td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</div>
+
+{{#ui/ui-dialog title="Delete User" confirmCaption="Delete" buttonColor=constants.Color.Red show=showDeleteDialog onAction=(action "onDelete")}}
+	<p>Are you sure you want to delete {{deleteUser.fullname}}?</p>
+{{/ui/ui-dialog}}
+
+<div id="edit-user-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">User {{editUser.firstname}} {{editUser.lastname}}</div>
+			<div class="modal-body">
+				<form>
+					<div class="form-group">
+						<label for="edit-firstname">Firstname</label>
+						{{input id="edit-firstname" class="form-control" type="text" value=editUser.firstname}}
+					</div>
+					<div class="form-group">
+						<label for="edit-lastname">Lastname</label>
+						{{input id="edit-lastname" type="text" class="form-control" value=editUser.lastname}}
+					</div>
+					<div class="form-group">
+						<label for="edit-email">Email</label>
+						{{input id="edit-email" type="text" class="form-control" value=editUser.email}}
+					</div>
+					{{#if (or isAuthProviderDocumize isDualAuth)}}
+						<div class="form-group">
+							<label for="edit-password">Password</label>
+							{{input id="edit-password" type="password" class="form-control" value=password.password}}
+							<small class="form-text text-muted">Optional new password</small>
+						</div>
+						<div class="form-group">
+							<label for="edit-confirmPassword">Confirm Password</label>
+							{{input id="edit-confirmPassword" type="password" class="form-control" value=password.confirmation}}
+							<small class="form-text text-muted">Confirm new password</small>
+						</div>
+					{{/if}}
+				</form>
+			</div>
+			<div class="modal-footer">
+				{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+				{{ui/ui-button-gap}}
+				{{ui/ui-button color=constants.Color.Green light=true label=constants.Label.Update onClick=(action "onUpdate")}}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="admin-user-delete-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">Delete Users</div>
+			<div class="modal-body">
+				<p>Are you sure you want to delete selected users?</p>
+			</div>
+			<div class="modal-footer">
+				{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+				{{ui/ui-button-gap}}
+				{{ui/ui-button color=constants.Color.Red light=true label=constants.Label.Delete onClick=(action "onBulkDelete")}}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="group-member-modal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">{{selectedUser.fullname}}</div>
+			<div class="modal-body">
+				{{#each groups as |group|}}
+					<div class="grid-container-8-2">
+						<div class="grid-cell-1">
+							<div class="view-customize">
+								<div class="group-membership">
+									<div class="item">
+										<div class="group-name">{{group.name}}
+											{{#if group.purpose}}
+												<span class="group-purpose">&nbsp;&mdash;&nbsp;{{group.purpose}}</span>
+											{{/if}}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="grid-cell-2 grid-cell-right">
+							<div class="view-customize">
+								<div class="group-membership">
+									<div class="item">
+										{{#if group.isMember}}
+											{{ui/ui-button color=constants.Color.Red light=true label=constants.Label.Leave onClick=(action "onLeaveGroup" group.id)}}
+										{{else}}
+											{{ui/ui-button color=constants.Color.Green light=true label=constants.Label.Join onClick=(action "onJoinGroup" group.id)}}
+										{{/if}}
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				{{/each}}
+			</div>
+			<div class="modal-footer">
+				{{ui/ui-button color=constants.Color.Gray light=true label=constants.Label.Close dismiss=true}}
+			</div>
+		</div>
+	</div>
+</div>
